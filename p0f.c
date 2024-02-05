@@ -528,7 +528,7 @@ static void prepare_pcap(void) {
   }
 
   link_type = pcap_datalink(pt);
-
+  SAYF("[+] Link type: '%i'.\n", link_type);
 }
 
 
@@ -1005,7 +1005,11 @@ static void offline_event_loop(void) {
 
   while (!stop_soon)  {
 
-    if (pcap_dispatch(pt, -1, (pcap_handler)parse_packet, 0) <= 0) return;
+    int err = 62;
+    if ((err = pcap_dispatch(pt, -1, (pcap_handler)parse_packet, 0)) <= 0) {
+        if (err != 0) WARN("pcap_dispatch() error: %s", pcap_geterr(pt));
+        return;
+    }
 
   }
 

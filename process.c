@@ -209,11 +209,13 @@ u8* addr_to_str(u8* data, u8 ip_ver) {
    in a protocol-agnostic buffer that will be then examined upstream. */
 
 void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const u8* data) {
-
   struct tcp_hdr* tcp;
   struct packet_data pk;
 
   s32 packet_len;
+  static s8 og_link_off = -1;
+  s32 og_packet_len;
+  const u8* og_data;
   u32 tcp_doff;
 
   u8* opt_end;
@@ -234,8 +236,15 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const u8* data) {
 
   /* Account for link-level headers. */
 
-  if (link_off < 0) find_offset(data, packet_len);
+  if (link_off < 0) {
+    find_offset(data, packet_len);
+    og_link_off = link_off;
+  }
 
+  og_data = data;
+  og_packet_len = packet_len;
+
+retry_find_l3_with_vlan:
   if (link_off > 0) {
 
     data += link_off;
@@ -425,10 +434,23 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const u8* data) {
 
   } else {
 
+    if (link_off != og_link_off) {
+        FATAL("Single VLAN encapsulation adjustment failed.");
+        link_off = og_link_off;
+        return;
+
+    }
     if (!bad_packets) {
       WARN("Unknown packet type %u, link detection issue?", *data >> 4);
       bad_packets = 1;
     }
+
+    WARN("Trying again accounting for one vlan encapsulation.");
+
+    link_off += 4;
+    data = og_data;
+    packet_len = og_packet_len;
+    goto retry_find_l3_with_vlan;
 
     return;
 
