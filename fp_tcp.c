@@ -43,6 +43,12 @@ static u8 guess_dist(u8 ttl) {
   return 255 - ttl;
 }
 
+static u8 guess_full_ittl(u8 ttl) {
+  if (ttl <= 32) return 32;
+  if (ttl <= 64) return 64;
+  if (ttl <= 128) return 128;
+  return 255;
+}
 
 /* Figure out if window size is a multiplier of MSS or MTU. We don't take window
    scaling into account, because neither do TCP stack developers. */
@@ -766,7 +772,8 @@ static u8* dump_sig(struct packet_data* pk, struct tcp_sig* ts, u16 syn_mss) {
   u8  win_mtu;
   s16 win_m;
   u32 i;
-  u8  dist = guess_dist(pk->ttl);
+  /* u8  dist = guess_dist(pk->ttl); */
+  u8  full_ittl = guess_full_ittl(pk->ttl);
 
 #define RETF(_par...) do { \
     s32 _len = snprintf(NULL, 0, _par); \
@@ -776,6 +783,7 @@ static u8* dump_sig(struct packet_data* pk, struct tcp_sig* ts, u16 syn_mss) {
     rlen += _len; \
   } while (0)
 
+#if 0
   if (dist > MAX_DIST) {
 
     RETF("%u:%u+?:%u:", pk->ip_ver, pk->ttl, pk->ip_opt_len);
@@ -785,6 +793,8 @@ static u8* dump_sig(struct packet_data* pk, struct tcp_sig* ts, u16 syn_mss) {
     RETF("%u:%u+%u:%u:", pk->ip_ver, pk->ttl, dist, pk->ip_opt_len);
 
   }
+#endif
+  RETF("%u:%u:%u:", pk->ip_ver, full_ittl, pk->ip_opt_len);
 
   /* Detect a system echoing back MSS from p0f-sendsyn queries, suggest using
      a wildcard in such a case. */
