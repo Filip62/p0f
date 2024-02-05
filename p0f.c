@@ -118,6 +118,10 @@ static void usage(void) {
 
   ERRORF(
 
+"==================================\n"
+"===== Filip's LENMOD version =====\n"
+"==================================\n"
+"\n"
 "Usage: p0f [ ...options... ] [ 'filter rule' ]\n"
 "\n"
 "Network interface options:\n"

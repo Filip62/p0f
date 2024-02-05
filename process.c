@@ -229,8 +229,9 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const u8* data) {
   packet_len = MIN(hdr->len, hdr->caplen);
   if (packet_len > SNAPLEN) packet_len = SNAPLEN;
 
-  // DEBUG("[#] Received packet: len = %d, caplen = %d, limit = %d\n",
-  //    hdr->len, hdr->caplen, SNAPLEN);
+  DEBUG("[#] Received packet: len = %d, caplen = %d, limit = %d\n",
+     hdr->len, hdr->caplen, SNAPLEN);
+  DEBUG("[#] Actual packet_len: %d\n", packet_len);
 
   /* Account for link-level headers. */
 
@@ -293,9 +294,8 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const u8* data) {
        off - even though we could just ignore this and recover. */
 
     if (tot_len > packet_len) {
-      DEBUG("[#] ipv4.tot_len = %u but packet_len = %u, bailing out!\n",
+      DEBUG("[#] ipv4.tot_len = %u but packet_len = %u, would be bailing out normally, but this is Filip's modified LENMOD version!\n",
             tot_len, packet_len);
-      return;
     }
 
     /* And finally, bail out if after skipping the IPv4 header as specified
@@ -439,6 +439,7 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const u8* data) {
    ***************/
 
   data = (u8*)tcp;
+  DEBUG("[#] TCP parsing, packet_len: %d\n", packet_len);
 
   tcp_doff = (tcp->doff_rsvd >> 4) * 4;
 
@@ -450,8 +451,7 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const u8* data) {
   }
 
   if (tcp_doff > packet_len) {
-    DEBUG("[#] tcp.hdr_len = %u, past end of packet!\n", tcp_doff);
-    return;
+    DEBUG("[#] tcp.hdr_len = %u, past end of packet! Would be bailing out normally, but this is Filip's modified LENMOD version!\n", tcp_doff);
   }
 
   pk.tot_hdr += tcp_doff;
@@ -523,6 +523,8 @@ void parse_packet(void* junk, const struct pcap_pkthdr* hdr, const u8* data) {
   if (tcp->flags & TCP_PUSH) pk.quirks |= QUIRK_PUSH;
 
   /* Handle payload data. */
+
+  tcp_doff = packet_len;
 
   if (tcp_doff == packet_len) {
 
