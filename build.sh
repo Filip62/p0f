@@ -13,10 +13,15 @@ VERSION="3.09b"
 
 test "$CC" = "" && CC="gcc"
 
-BASIC_CFLAGS="-Wall -Wno-format -I/usr/local/include/ \
+OLD_BASIC_CFLAGS="-Wall -Wno-format -I/usr/local/include/ \
               -I/opt/local/include/ -DVERSION=\"$VERSION\" $CFLAGS"
 
-BASIC_LDFLAGS="-L/usr/local/lib/ -L/opt/local/lib $LDFLAGS"
+OLD_BASIC_LDFLAGS="-L/usr/local/lib/ -L/opt/local/lib $LDFLAGS"
+
+BASIC_CFLAGS="-Wall -Wno-format -I/home/local/xbanak01/sw/libpcap-1.10.4/ \
+              -DVERSION=\"$VERSION\" $CFLAGS"
+
+BASIC_LDFLAGS="$LDFLAGS"
 
 USE_CFLAGS="-fstack-protector-all -fPIE -D_FORTIFY_SOURCE=2 -g -ggdb \
             $BASIC_CFLAGS"
@@ -28,7 +33,7 @@ if [ "$OSTYPE" = "cygwin" ]; then
 elif [ "$OSTYPE" = "solaris" ]; then
   USE_LIBS="-lsocket -lnsl $LIBS"
 else
-  USE_LIBS="-lpcap $LIBS"
+  USE_LIBS="/home/local/xbanak01/sw/libpcap-1.10.4/libpcap.a -libverbs -lnl-genl-3 -lnl-3 -ldbus-1 $LIBS"
 fi
 
 OBJFILES="api.c process.c fp_tcp.c fp_mtu.c fp_http.c readfp.c"
@@ -87,8 +92,8 @@ elif [ "$1" = "all" -o "$1" = "" ]; then
 elif [ "$1" = "debug" ]; then
 
   echo "[+] Configuring debug build."
-  BASIC_CFLAGS="$BASIC_CFLAGS -DDEBUG_BUILD=1"
-  USE_CFLAGS="$USE_CFLAGS -DDEBUG_BUILD=1"
+  BASIC_CFLAGS="$BASIC_CFLAGS -DDEBUG_BUILD=1 -O2"
+  USE_CFLAGS="$USE_CFLAGS -DDEBUG_BUILD=1 -O2"
   
 else
 
@@ -237,6 +242,7 @@ echo -n "[*] Checking for working libpcap... "
 rm -f "$TMP" "$TMP.c" "$TMP.log" || exit 1
 
 echo -e "#include <pcap.h>\nint main() { char i[PCAP_ERRBUF_SIZE]; pcap_lookupdev(i); return 0; }" >"$TMP.c" || exit 1
+echo $CC $USE_CFLAGS $USE_LDFLAGS "$TMP.c" -o "$TMP" $USE_LIBS
 $CC $USE_CFLAGS $USE_LDFLAGS "$TMP.c" -o "$TMP" $USE_LIBS &>"$TMP.log"
 
 if [ ! -x "$TMP" ]; then
@@ -269,6 +275,7 @@ if [ ! -x "$TMP" ]; then
   echo
   echo "Output from an attempt to compile sample program:"
   cat "$TMP.log" | head -10
+  cp "$TMP.log" ./log.log
   echo
   rm -f "$TMP" "$TMP.log" "$TMP.c"
   exit 1
