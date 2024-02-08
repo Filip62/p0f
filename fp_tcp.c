@@ -769,8 +769,8 @@ static u8* dump_sig(struct packet_data* pk, struct tcp_sig* ts, u16 syn_mss) {
   static u8* ret;
   u32 rlen = 0;
 
-  u8  win_mtu;
-  s16 win_m;
+  /* u8  win_mtu; */
+  /* s16 win_m; */
   u32 i;
   /* u8  dist = guess_dist(pk->ttl); */
   u8  full_ittl = guess_full_ittl(pk->ttl);
@@ -802,10 +802,13 @@ static u8* dump_sig(struct packet_data* pk, struct tcp_sig* ts, u16 syn_mss) {
   if (pk->mss == SPECIAL_MSS && pk->tcp_type == (TCP_SYN|TCP_ACK)) RETF("*:");
   else RETF("%u:", pk->mss);
 
+#if 0
   win_m = detect_win_multi(ts, &win_mtu, syn_mss);
 
   if (win_m > 0) RETF("%s*%u", win_mtu ? "mtu" : "mss", win_m);
   else RETF("%u", pk->win);
+#endif
+  RETF("%u", pk->win);
 
   RETF(",%u:", pk->wscale);
 
